@@ -197,6 +197,7 @@ export default function App() {
                                             group={selectedGroup}
                                             onBack={() => setView('dashboard')}
                                             onEdit={() => setShowEditGroup(true)}
+                                            onAdd={() => setShowAdd(true)}
                                             onEditExpense={(expense) => {
                                                 setEditingExpense(expense);
                                                 setShowAdd(true);
@@ -207,12 +208,14 @@ export default function App() {
                             </AnimatePresence>
                         </div>
 
-                        {/* Mobile Bottom Nav */}
-                        <MobileNavbar
-                            currentTab={currentTab}
-                            onTabChange={(tab) => { setView('dashboard'); setCurrentTab(tab); }}
-                            onAdd={() => setShowAdd(true)}
-                        />
+                        {/* Mobile Bottom Nav - Only show on dashboard views */}
+                        {view === 'dashboard' && (
+                            <MobileNavbar
+                                currentTab={currentTab}
+                                onTabChange={(tab) => { setView('dashboard'); setCurrentTab(tab); }}
+                                onAdd={() => setShowAdd(true)}
+                            />
+                        )}
                     </main>
 
                     {/* Desktop FAB */}

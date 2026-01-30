@@ -1,11 +1,11 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, Utensils, Settings, Flame, Wine, MessageSquare, ReceiptText, Share2, Check } from 'lucide-react';
+import { ChevronRight, Utensils, Settings, Flame, Wine, MessageSquare, ReceiptText, Share2, Check, Plus } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import SpotlightCard from '@/components/ui/SpotlightCard';
 import GroupChat from '@/components/features/GroupChat';
 
-const GroupDetailView = ({ group, onBack, onEdit, onEditExpense }) => {
+const GroupDetailView = ({ group, onBack, onEdit, onEditExpense, onAdd }) => {
     const { expenses, settleUp, currentUser, shareSettlement, simplifyDebts, shareNudge } = useAppStore();
     const [activeTab, setActiveTab] = React.useState('expenses'); // 'expenses', 'settle', 'chat'
 
@@ -207,6 +207,22 @@ const GroupDetailView = ({ group, onBack, onEdit, onEditExpense }) => {
                         </motion.div>
                     )}
                 </AnimatePresence>
+                {/* Floating Add Button - Only for Ledger tab */}
+                {activeTab === 'expenses' && (
+                    <motion.div
+                        initial={{ scale: 0, y: 20 }}
+                        animate={{ scale: 1, y: 0 }}
+                        exit={{ scale: 0, y: 20 }}
+                        className="absolute bottom-6 right-6 z-50 md:hidden"
+                    >
+                        <button
+                            onClick={onAdd}
+                            className="w-16 h-16 bg-[#abb4d9] text-[#11111b] rounded-full shadow-2xl shadow-[#abb4d9]/40 flex items-center justify-center active:scale-95 transition-transform"
+                        >
+                            <Plus size={32} strokeWidth={3} />
+                        </button>
+                    </motion.div>
+                )}
             </div>
         </div>
     );
