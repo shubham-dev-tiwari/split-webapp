@@ -1,0 +1,29 @@
+{
+  "name": "dostipe-charcha",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.93.3",
+    "clsx": "^2.1.1",
+    "framer-motion": "^11.9.0",
+    "lucide-react": "^0.446.0",
+    "next": "14.2.13",
+    "react": "^18",
+    "react-dom": "^18",
+    "tailwind-merge": "^2.5.2",
+    "zustand": "^5.0.10"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.23",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.13",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1"
+  }
+}

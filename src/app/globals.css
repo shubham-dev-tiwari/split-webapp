@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: #11111b;
+}
+
+/* --- Grain Overlay --- */
+.grain-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0.04;
+  background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDhGrBf_HkmDVFASlwl1T1DvClt91i29WEG_qUx3JAmJpm2ss8PcALVbZJw2ke7ICftnLKggUgZ8oeNgLOkz4iqad91Ruepok7-UCS-z6tQDQJYrwFpfVbAZkFCev2ExHkuuUYOgWu8kL9NowVgNmPqF4legvwFDS0bPUD-TGgemPZ2BE5LsNVcn1nCyL-bJoY6aPQT9SEjjrCcWVrREmGeTPlB9F2WlZvd42o8UDrbreizy89Dddqm4vfSJb35UOlNQnYhiatgdzk");
+}
+
+/* --- Aurora Background Animation --- */
+@keyframes aurora {
+  0% { background-position: 50% 50%, 50% 50%; }
+  100% { background-position: 350% 50%, 350% 50%; }
+}
+
+.aurora-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  background-image: 
+    radial-gradient(circle at 100% 100%, rgba(203, 166, 247, 0.15), transparent 50%),
+    radial-gradient(circle at 0% 0%, rgba(171, 180, 217, 0.15), transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(116, 199, 236, 0.05), transparent 50%);
+  filter: blur(60px);
+  opacity: 0.6;
+}
+
+
+/* --- Utilities --- */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Glassmorphism Utilities */
+.glass-panel {
+  background: rgba(49, 50, 68, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-panel-heavy {
+  background: rgba(24, 24, 37, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
