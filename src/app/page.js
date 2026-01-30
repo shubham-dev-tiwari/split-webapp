@@ -19,6 +19,7 @@ import HomeView from '@/components/screens/HomeView';
 import GroupsView from '@/components/screens/GroupsView';
 import HistoryView from '@/components/screens/HistoryView';
 import SettingsView from '@/components/screens/SettingsView';
+import SocialView from '@/components/screens/SocialView';
 import GroupDetailView from '@/components/screens/GroupDetailView';
 
 // Feature Components
@@ -187,6 +188,7 @@ export default function App() {
                                         <>
                                             {currentTab === 'home' && <HomeView groups={groups} balance={totalBalance} onSelectGroup={navigateToGroup} />}
                                             {currentTab === 'groups' && <GroupsView groups={groups} navigateToGroup={navigateToGroup} onCreateGroup={() => setShowCreateGroup(true)} />}
+                                            {currentTab === 'social' && <SocialView />}
                                             {currentTab === 'history' && <HistoryView />}
                                             {currentTab === 'settings' && <SettingsView />}
                                         </>

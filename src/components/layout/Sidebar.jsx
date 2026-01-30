@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Home, Users, History, Settings, Sparkles } from 'lucide-react';
+import { Home, Users, History, Settings, Sparkles, UserPlus } from 'lucide-react';
+import { useAppStore } from '@/store/useAppStore';
 
 const Sidebar = ({ currentTab, setView, setCurrentTab }) => (
     <aside className="hidden md:flex flex-col w-72 h-full glass-panel-heavy border-r border-white/5 p-6 shrink-0 rounded-3xl mr-6 relative overflow-hidden">
@@ -17,27 +18,38 @@ const Sidebar = ({ currentTab, setView, setCurrentTab }) => (
             {[
                 { id: 'home', icon: <Home />, label: 'Dashboard' },
                 { id: 'groups', icon: <Users />, label: 'Groups' },
-                { id: 'history', icon: <History />, label: 'Transaction History' },
+                { id: 'social', icon: <UserPlus />, label: 'Social' },
+                { id: 'history', icon: <History />, label: 'History' },
                 { id: 'settings', icon: <Settings />, label: 'Settings' }
-            ].map(item => (
-                <button
-                    key={item.id}
-                    onClick={() => { setView('dashboard'); setCurrentTab(item.id); }}
-                    className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all relative overflow-hidden group ${currentTab === item.id
+            ].map(item => {
+                const { dbNotifications } = useAppStore();
+                const unreadCount = dbNotifications.filter(n => !n.is_read).length;
+
+                return (
+                    <button
+                        key={item.id}
+                        onClick={() => { setView('dashboard'); setCurrentTab(item.id); }}
+                        className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all relative overflow-hidden group ${currentTab === item.id
                             ? 'text-white'
                             : 'text-[#9399b2] hover:text-white'
-                        }`}
-                >
-                    {currentTab === item.id && (
-                        <motion.div
-                            layoutId="sidebar-active"
-                            className="absolute inset-0 bg-white/5 border border-white/5 rounded-2xl shadow-inner"
-                        />
-                    )}
-                    <span className="relative z-10 transition-transform group-hover:scale-110">{React.cloneElement(item.icon, { size: 20 })}</span>
-                    <span className="relative z-10 font-bold tracking-wide">{item.label}</span>
-                </button>
-            ))}
+                            }`}
+                    >
+                        {currentTab === item.id && (
+                            <motion.div
+                                layoutId="sidebar-active"
+                                className="absolute inset-0 bg-white/5 border border-white/5 rounded-2xl shadow-inner"
+                            />
+                        )}
+                        <div className="relative">
+                            <span className="relative z-10 block transition-transform group-hover:scale-110">{React.cloneElement(item.icon, { size: 20 })}</span>
+                            {item.id === 'social' && unreadCount > 0 && (
+                                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[#f38ba8] rounded-full border-2 border-[#1e1e2e]" />
+                            )}
+                        </div>
+                        <span className="relative z-10 font-bold tracking-wide">{item.label}</span>
+                    </button>
+                );
+            })}
         </nav>
 
         <div className="mt-auto relative z-10">

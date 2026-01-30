@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 const EMOJIS = ['🏖️', '🏠', '🍻', '🎓', '🍱', '🚕', '🎮', '💡', '⚽', '🍕', '💃', '🚀'];
 
 const CreateGroupFlow = ({ onClose, onComplete }) => {
+    const { friends } = useAppStore(); // Get friends from store
     const [name, setName] = useState('');
     const [emoji, setEmoji] = useState(EMOJIS[0]);
     const [budget, setBudget] = useState('');
@@ -148,6 +149,32 @@ const CreateGroupFlow = ({ onClose, onComplete }) => {
                                 <Plus size={24} strokeWidth={3} />
                             </motion.button>
                         </div>
+
+                        {/* Friends Suggestions */}
+                        {friends.length > 0 && !newMember && (
+                            <div className="mt-4">
+                                <label className="text-[9px] font-black text-[#6c7086] uppercase tracking-[0.2em] px-1 mb-2 block">Quick Add Friends</label>
+                                <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+                                    {friends.map(friend => {
+                                        const isAdded = members.some(m => m.id === friend.id);
+                                        return (
+                                            <motion.button
+                                                key={friend.id}
+                                                whileTap={{ scale: 0.95 }}
+                                                onClick={() => !isAdded && handleAddMember({ ...friend, is_real: true })}
+                                                className={`flex items-center gap-2 p-2 pr-4 rounded-full border border-white/5 transition-all flex-shrink-0 ${isAdded ? 'bg-lavender/10 opacity-50 cursor-default' : 'bg-[#313244] hover:bg-[#45475a]'}`}
+                                            >
+                                                <div className="w-8 h-8 rounded-full bg-[#1e1e2e] flex items-center justify-center text-xs border border-white/10 overflow-hidden">
+                                                    {friend.avatar_url ? <img src={friend.avatar_url} className="w-full h-full object-cover" /> : friend.full_name[0]}
+                                                </div>
+                                                <span className={`text-xs font-bold ${isAdded ? 'text-lavender' : 'text-white'}`}>{friend.full_name.split(' ')[0]}</span>
+                                                {!isAdded && <Plus size={12} className="text-[#a6e3a1]" />}
+                                            </motion.button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Search Results Dropdown */}
                         <AnimatePresence>

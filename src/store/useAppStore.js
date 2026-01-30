@@ -11,7 +11,9 @@ export const useAppStore = create((set, get) => ({
     ],
     currentUser: null,
     userTotals: { owes: 0, owed: 0 },
-    notifications: [],
+    systemAlerts: [],
+    friends: [],
+    dbNotifications: [],
 
     // Actions
     fetchData: async () => {
@@ -119,9 +121,31 @@ export const useAppStore = create((set, get) => ({
             return { ...group, balance: totalNetBalance };
         });
 
+        // 4. Fetch Friends (Accepted)
+        const { data: friendships } = await supabase
+            .from('friendships')
+            .select(`
+                *,
+                user:profiles!friendships_user_id_fkey(*),
+                friend:profiles!friendships_friend_id_fkey(*)
+            `)
+            .eq('status', 'accepted')
+            .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`);
+
+        const friendsList = friendships?.map(f => f.user_id === user.id ? f.friend : f.user) || [];
+
+        // 5. Fetch Notifications
+        const { data: dbNotifs } = await supabase
+            .from('notifications')
+            .select('*, sender:profiles(*), group:groups(*)')
+            .eq('receiver_id', user.id)
+            .order('created_at', { ascending: false });
+
         set({
             groups: groupsWithBalance,
             expenses,
+            friends: friendsList,
+            dbNotifications: dbNotifs || [],
             userTotals: {
                 owes: globalTotalOwes,
                 owed: globalTotalOwed
@@ -197,6 +221,19 @@ export const useAppStore = create((set, get) => ({
             if (mError) {
                 console.error("Error adding members to group:", mError);
                 throw mError;
+            }
+
+            // 3. Notify real members
+            const realMembers = groupData.members.filter(m => m.is_real);
+            if (realMembers.length > 0) {
+                const notifications = realMembers.map(m => ({
+                    receiver_id: m.id,
+                    sender_id: user.id,
+                    type: 'group_invite',
+                    group_id: group.id,
+                    content: `added you to group "${group.name}"`
+                }));
+                await supabase.from('notifications').insert(notifications);
             }
 
             console.log("Group created successfully:", group.name);
@@ -301,13 +338,90 @@ export const useAppStore = create((set, get) => ({
     addNotification: (message, type = 'info') => {
         const id = Date.now();
         set(state => ({
-            notifications: [...state.notifications, { id, message, type }]
+            systemAlerts: [...state.systemAlerts, { id, message, type }]
         }));
         setTimeout(() => {
             set(state => ({
-                notifications: state.notifications.filter(n => n.id !== id)
+                systemAlerts: state.systemAlerts.filter(n => n.id !== id)
             }));
         }, 3000);
+    },
+
+    // SOCIAL ACTIONS
+    sendFriendRequest: async (targetUserId) => {
+        try {
+            const { currentUser, addNotification } = get();
+            if (!currentUser) return;
+
+            // Check if already friends or pending
+            const { data: existing } = await supabase
+                .from('friendships')
+                .select('*')
+                .or(`and(user_id.eq.${currentUser.id},friend_id.eq.${targetUserId}),and(user_id.eq.${targetUserId},friend_id.eq.${currentUser.id})`)
+                .single();
+
+            if (existing) {
+                addNotification("Request already sent or already friends!", "info");
+                return;
+            }
+
+            const { error: fError } = await supabase
+                .from('friendships')
+                .insert([{ user_id: currentUser.id, friend_id: targetUserId, status: 'pending' }]);
+
+            if (fError) throw fError;
+
+            // Create notification for the receiver
+            await supabase.from('notifications').insert([{
+                receiver_id: targetUserId,
+                sender_id: currentUser.id,
+                type: 'friend_request',
+                content: 'sent you a friend request'
+            }]);
+
+            addNotification("Friend request sent! ✨", "success");
+        } catch (error) {
+            console.error("Error sending friend request:", error);
+            get().addNotification("Failed to send request", "error");
+        }
+    },
+
+    acceptFriendRequest: async (notificationId, senderId) => {
+        try {
+            const { currentUser, fetchData } = get();
+
+            // 1. Update friendship status
+            await supabase
+                .from('friendships')
+                .update({ status: 'accepted' })
+                .eq('user_id', senderId)
+                .eq('friend_id', currentUser.id);
+
+            // 2. Mark notification as read
+            await supabase
+                .from('notifications')
+                .update({ is_read: true })
+                .eq('id', notificationId);
+
+            // 3. Notify sender
+            await supabase.from('notifications').insert([{
+                receiver_id: senderId,
+                sender_id: currentUser.id,
+                type: 'friend_accept',
+                content: 'accepted your friend request'
+            }]);
+
+            await fetchData();
+        } catch (error) {
+            console.error("Error accepting friend request:", error);
+        }
+    },
+
+    markNotifRead: async (notifId) => {
+        await supabase.from('notifications').update({ is_read: true }).eq('id', notifId);
+        set(state => ({
+            dbNotifications: state.dbNotifications.map(n => n.id === notifId ? { ...n, is_read: true } : n)
+        }));
     },
 
     joinGroup: async (groupId) => {
@@ -396,9 +510,24 @@ export const useAppStore = create((set, get) => ({
             if (additions.length > 0) {
                 const toInsert = additions.map(a => ({
                     group_id: id,
+                    profile_id: a.is_real ? a.id : null,
                     display_name: a.name
                 }));
                 await supabase.from('group_members').insert(toInsert);
+
+                // Notifications for real users
+                const { currentUser } = get();
+                const realNewMembers = additions.filter(a => a.is_real);
+                if (realNewMembers.length > 0) {
+                    const notifications = realNewMembers.map(m => ({
+                        receiver_id: m.id,
+                        sender_id: currentUser.id, // Assuming currentUser triggers this update
+                        type: 'group_invite',
+                        group_id: id,
+                        content: `added you to group "${groupData.name || originalGroup.name}"`
+                    }));
+                    await supabase.from('notifications').insert(notifications);
+                }
             }
 
             console.log("Group updated successfully");

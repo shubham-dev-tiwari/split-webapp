@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Home, Users, History, Settings, Plus } from 'lucide-react';
+import { Home, Users, History, Settings, Plus, UserPlus } from 'lucide-react';
+import { useAppStore } from '@/store/useAppStore';
 
 const MobileNavbar = ({ currentTab, onTabChange, onAdd }) => {
     return (
@@ -54,11 +55,18 @@ const MobileNavbar = ({ currentTab, onTabChange, onAdd }) => {
 
                     {/* Right Group */}
                     <div className="flex gap-10 pr-2">
-                        <NavIcon
-                            active={currentTab === 'history'}
-                            icon={<History size={24} strokeWidth={currentTab === 'history' ? 2.5 : 2} />}
-                            onClick={() => onTabChange('history')}
-                        />
+                        {(() => {
+                            const { dbNotifications } = useAppStore();
+                            const unreadCount = dbNotifications.filter(n => !n.is_read).length;
+                            return (
+                                <NavIcon
+                                    active={currentTab === 'social'}
+                                    icon={<UserPlus size={24} strokeWidth={currentTab === 'social' ? 2.5 : 2} />}
+                                    onClick={() => onTabChange('social')}
+                                    badge={unreadCount > 0}
+                                />
+                            );
+                        })()}
                         <NavIcon
                             active={currentTab === 'settings'}
                             icon={<Settings size={24} strokeWidth={currentTab === 'settings' ? 2.5 : 2} />}
@@ -71,16 +79,19 @@ const MobileNavbar = ({ currentTab, onTabChange, onAdd }) => {
     );
 };
 
-const NavIcon = ({ active, icon, onClick }) => (
+const NavIcon = ({ active, icon, onClick, badge }) => (
     <button onClick={onClick} className="relative flex flex-col items-center justify-center h-full w-10">
         <motion.div
             animate={{
                 color: active ? '#cba6f7' : '#9399b2',
                 y: active ? -2 : 0
             }}
-            className="mb-1"
+            className="mb-1 relative"
         >
             {icon}
+            {badge && (
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[#f38ba8] rounded-full border-2 border-[#181825]" />
+            )}
         </motion.div>
         {active && (
             <motion.div

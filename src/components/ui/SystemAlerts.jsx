@@ -29,12 +29,12 @@ const Toast = ({ notification }) => {
 };
 
 const SystemAlerts = () => {
-    const { notifications } = useAppStore();
+    const { systemAlerts } = useAppStore();
 
     return (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center gap-3 pointer-events-none">
             <AnimatePresence mode="popLayout">
-                {notifications.map(n => (
+                {systemAlerts.map(n => (
                     <div key={n.id} className="pointer-events-auto">
                         <Toast notification={n} />
                     </div>

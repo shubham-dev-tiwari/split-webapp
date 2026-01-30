@@ -1,6 +1,7 @@
 import { ChevronRight, Trash2, LogOut } from 'lucide-react';
 import SpotlightCard from '@/components/ui/SpotlightCard';
 import { supabase } from '@/lib/supabase';
+import { useAppStore } from '@/store/useAppStore';
 
 const SettingsView = () => {
     const { userTotals, currentUser } = useAppStore();
