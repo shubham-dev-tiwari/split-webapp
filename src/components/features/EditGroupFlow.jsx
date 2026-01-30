@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, Trash2, Search, UserCheck } from 'lucide-react';
+import { Plus, X, Trash2, Search, UserCheck, Share2, Copy } from 'lucide-react';
 import SheetHeader from '@/components/ui/SheetHeader';
 import { useAppStore } from '@/store/useAppStore';
 import { supabase } from '@/lib/supabase';
@@ -74,6 +74,12 @@ const EditGroupFlow = ({ group, onClose, onUpdate, onDelete }) => {
                 members // The store will handle diffing this
             });
         }
+    };
+
+    const handleCopyInvite = () => {
+        const inviteLink = `${window.location.origin}${window.location.pathname}?invite=${group.id}`;
+        navigator.clipboard.writeText(inviteLink);
+        addNotification("Invite link copied to clipboard!", "success");
     };
 
     return (
@@ -187,8 +193,15 @@ const EditGroupFlow = ({ group, onClose, onUpdate, onDelete }) => {
                     <p className="text-[9px] text-[#585b70] font-bold uppercase px-1">Note: Removing members here won't delete their transaction history.</p>
                 </div>
 
-                {/* Delete Group Button */}
-                <div className="pt-6">
+                <div className="pt-6 space-y-3">
+                    <button
+                        onClick={handleCopyInvite}
+                        className="w-full flex items-center justify-center gap-2 py-4 bg-lavender/10 text-lavender rounded-2xl font-bold border border-lavender/20 hover:bg-lavender/20 transition-colors"
+                    >
+                        <Share2 size={20} />
+                        Share Invite Link
+                    </button>
+
                     <button
                         onClick={() => onDelete(group.id)}
                         className="w-full flex items-center justify-center gap-2 py-4 bg-[#f38ba8]/10 text-[#f38ba8] rounded-2xl font-bold border border-[#f38ba8]/20 hover:bg-[#f38ba8]/20 transition-colors"

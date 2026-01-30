@@ -310,6 +310,42 @@ export const useAppStore = create((set, get) => ({
         }, 3000);
     },
 
+    joinGroup: async (groupId) => {
+        try {
+            const { currentUser, addNotification, fetchData } = get();
+            if (!currentUser) throw new Error("Must be logged in to join");
+
+            // Check if already a member
+            const { data: existing } = await supabase
+                .from('group_members')
+                .select('id')
+                .eq('group_id', groupId)
+                .eq('profile_id', currentUser.id)
+                .single();
+
+            if (existing) {
+                addNotification("You are already a member of this group!", "info");
+                return;
+            }
+
+            const { error } = await supabase
+                .from('group_members')
+                .insert([{
+                    group_id: groupId,
+                    profile_id: currentUser.id,
+                    display_name: currentUser.user_metadata?.full_name || currentUser.email
+                }]);
+
+            if (error) throw error;
+
+            addNotification("Welcome to the group! 🎉", "success");
+            await fetchData();
+        } catch (error) {
+            console.error("Error joining group:", error);
+            get().addNotification("Failed to join group", "error");
+        }
+    },
+
     updateGroup: async (id, groupData) => {
         try {
             const { groups } = get();

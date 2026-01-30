@@ -25,6 +25,7 @@ import GroupDetailView from '@/components/screens/GroupDetailView';
 import AddExpenseFlow from '@/components/features/AddExpenseFlow';
 import CreateGroupFlow from '@/components/features/CreateGroupFlow';
 import EditGroupFlow from '@/components/features/EditGroupFlow';
+import JoinGroupOverlay from '@/components/features/JoinGroupOverlay';
 import AuthFlow from '@/components/features/AuthFlow';
 
 // Supabase
@@ -49,6 +50,7 @@ export default function App() {
     const [editingExpense, setEditingExpense] = useState(null);
     const [showAuth, setShowAuth] = useState(false);
     const [session, setSession] = useState(null);
+    const [inviteGroupId, setInviteGroupId] = useState(null);
 
     // Initial session check & listener
     useEffect(() => {
@@ -73,6 +75,18 @@ export default function App() {
 
         return () => subscription.unsubscribe();
     }, [fetchData]);
+
+    // Handle invite links
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const inviteId = params.get('invite');
+        if (inviteId) {
+            setInviteGroupId(inviteId);
+            // Clear the param from URL
+            const nextUrl = window.location.pathname;
+            window.history.replaceState({}, '', nextUrl);
+        }
+    }, []);
 
     // Derived state
     const totalBalance = useMemo(() => groups.reduce((acc, g) => acc + g.balance, 0), [groups]);
@@ -223,6 +237,13 @@ export default function App() {
             <BottomSheet isOpen={showAuth} onClose={() => setShowAuth(false)}>
                 <AuthFlow onComplete={() => setShowAuth(false)} />
             </BottomSheet>
+
+            {inviteGroupId && (
+                <JoinGroupOverlay
+                    groupId={inviteGroupId}
+                    onClose={() => setInviteGroupId(null)}
+                />
+            )}
 
             <SystemAlerts />
         </div>
