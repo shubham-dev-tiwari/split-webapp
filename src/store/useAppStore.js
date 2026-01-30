@@ -12,7 +12,9 @@ export const useAppStore = create((set, get) => ({
     currentUser: null,
     userTotals: { owes: 0, owed: 0 },
     systemAlerts: [],
+    systemAlerts: [],
     friends: [],
+    pendingRequests: [],
     dbNotifications: [],
 
     // Actions
@@ -134,7 +136,17 @@ export const useAppStore = create((set, get) => ({
 
         const friendsList = friendships?.map(f => f.user_id === user.id ? f.friend : f.user) || [];
 
-        // 5. Fetch Notifications
+        // 5. Fetch Pending Requests
+        const { data: pending } = await supabase
+            .from('friendships')
+            .select(`
+                *,
+                user:profiles!friendships_user_id_fkey(*)
+            `)
+            .eq('status', 'pending')
+            .eq('friend_id', user.id);
+
+        // 6. Fetch Notifications
         const { data: dbNotifs } = await supabase
             .from('notifications')
             .select('*, sender:profiles(*), group:groups(*)')
@@ -145,6 +157,7 @@ export const useAppStore = create((set, get) => ({
             groups: groupsWithBalance,
             expenses,
             friends: friendsList,
+            pendingRequests: pending || [],
             dbNotifications: dbNotifs || [],
             userTotals: {
                 owes: globalTotalOwes,
@@ -169,6 +182,12 @@ export const useAppStore = create((set, get) => ({
                 get().fetchData();
             })
             .on('postgres_changes', { event: '*', schema: 'public', table: 'group_members' }, () => {
+                get().fetchData();
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'friendships' }, () => {
+                get().fetchData();
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => {
                 get().fetchData();
             })
             .subscribe();
@@ -386,7 +405,7 @@ export const useAppStore = create((set, get) => ({
         }
     },
 
-    acceptFriendRequest: async (notificationId, senderId) => {
+    acceptFriendRequest: async (senderId, notifId = null) => {
         try {
             const { currentUser, fetchData } = get();
 
@@ -397,11 +416,13 @@ export const useAppStore = create((set, get) => ({
                 .eq('user_id', senderId)
                 .eq('friend_id', currentUser.id);
 
-            // 2. Mark notification as read
-            await supabase
-                .from('notifications')
-                .update({ is_read: true })
-                .eq('id', notificationId);
+            // 2. Mark notification as read (if provided)
+            if (notifId) {
+                await supabase
+                    .from('notifications')
+                    .update({ is_read: true })
+                    .eq('id', notifId);
+            }
 
             // 3. Notify sender
             await supabase.from('notifications').insert([{

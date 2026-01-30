@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import SpotlightCard from '@/components/ui/SpotlightCard';
 
 const SocialView = () => {
-    const { friends, dbNotifications, sendFriendRequest, acceptFriendRequest, markNotifRead, currentUser } = useAppStore();
+    const { friends, pendingRequests, dbNotifications, sendFriendRequest, acceptFriendRequest, markNotifRead, currentUser } = useAppStore();
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
@@ -34,16 +34,74 @@ const SocialView = () => {
             <header>
                 <h1 className="text-3xl font-black text-white tracking-tight">Social</h1>
                 <p className="text-[10px] uppercase tracking-widest text-[#585b70] font-black">FRIENDS & NOTIFICATIONS</p>
+                <button
+                    onClick={async () => {
+                        await supabase.from('notifications').insert([{
+                            receiver_id: currentUser.id,
+                            sender_id: currentUser.id,
+                            type: 'info',
+                            content: 'Test notification working! 🚀'
+                        }]);
+                    }}
+                    className="mt-4 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-white hover:bg-white/10"
+                >
+                    Test Realtime 🔔
+                </button>
             </header>
 
-            {/* Notifications Section */}
-            {dbNotifications.some(n => !n.is_read) && (
+            {/* Pending Requests Section (Persistent) */}
+            {pendingRequests.length > 0 && (
                 <section className="space-y-4">
-                    <h3 className="text-xs font-bold text-[#f38ba8] uppercase tracking-widest flex items-center gap-2">
-                        <Bell size={14} /> New Activity
+                    <h3 className="text-xs font-bold text-[#fab387] uppercase tracking-widest flex items-center gap-2">
+                        <Clock size={14} /> Pending Requests
                     </h3>
                     <div className="space-y-3">
-                        {dbNotifications.filter(n => !n.is_read).map(n => (
+                        {pendingRequests.map(req => (
+                            <motion.div
+                                key={req.id}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="bg-[#313244] p-4 rounded-3xl border border-[#fab387]/20 flex items-center justify-between shadow-lg shadow-[#fab387]/5"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-full bg-[#181825] flex items-center justify-center text-lg shadow-inner border border-white/5 overflow-hidden">
+                                        {req.user?.avatar_url ? (
+                                            <img src={req.user.avatar_url} alt="" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <span>{req.user?.full_name[0]}</span>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-white leading-snug">
+                                            {req.user?.full_name}
+                                        </p>
+                                        <p className="text-[10px] text-[#585b70] font-black uppercase tracking-widest mt-1">
+                                            Wants to be friends
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => acceptFriendRequest(req.user_id)}
+                                        className="w-10 h-10 rounded-xl bg-[#a6e3a1] text-[#11111b] flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg shadow-[#a6e3a1]/20"
+                                    >
+                                        <Check size={20} strokeWidth={3} />
+                                    </button>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </section>
+            )}
+
+            {/* Notifications Section */}
+            {dbNotifications.some(n => !n.is_read && n.type !== 'friend_request') && (
+                <section className="space-y-4">
+                    <h3 className="text-xs font-bold text-[#f38ba8] uppercase tracking-widest flex items-center gap-2">
+                        <Bell size={14} /> Other Activity
+                    </h3>
+                    <div className="space-y-3">
+                        {dbNotifications.filter(n => !n.is_read && n.type !== 'friend_request').map(n => (
                             <motion.div
                                 key={n.id}
                                 initial={{ opacity: 0, x: -20 }}
@@ -70,7 +128,7 @@ const SocialView = () => {
                                 {n.type === 'friend_request' ? (
                                     <div className="flex gap-2">
                                         <button
-                                            onClick={() => acceptFriendRequest(n.id, n.sender_id)}
+                                            onClick={() => acceptFriendRequest(n.sender_id, n.id)}
                                             className="w-10 h-10 rounded-xl bg-[#a6e3a1] text-[#11111b] flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg shadow-[#a6e3a1]/20"
                                         >
                                             <Check size={20} strokeWidth={3} />
