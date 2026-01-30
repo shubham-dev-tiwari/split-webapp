@@ -197,8 +197,12 @@ const HomeView = ({ groups, balance, onSelectGroup }) => {
                                         <p className={`text-sm font-black ${group.balance >= 0 ? 'text-[#a6e3a1]' : 'text-[#eba0ac]'} leading-tight my-0.5`}>
                                             {group.balance >= 0 ? '+' : ''}₹{Math.abs(group.balance).toLocaleString('en-IN')}
                                         </p>
+                                        <p className="text-[10px] text-[#9399b2] font-black uppercase tracking-wider opacity-60">
+                                            Admin: {group.owner?.full_name || 'Friend'}
+                                        </p>
                                         <p className="text-[10px] text-[#a6adc8] font-medium truncate opacity-60">
-                                            {group.members.length} Members
+                                            {group.members.slice(0, 3).map(m => m.name).join(', ')}
+                                            {group.members.length > 3 ? ` +${group.members.length - 3}` : ''}
                                         </p>
                                     </div>
 

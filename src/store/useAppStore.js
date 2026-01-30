@@ -25,7 +25,7 @@ export const useAppStore = create((set, get) => ({
             .from('group_members')
             .select(`
                 group_id,
-                groups (*),
+                groups (*, owner:profiles(full_name, avatar_url)),
                 profiles (*)
             `)
             .eq('profile_id', user.id);

@@ -42,7 +42,7 @@ import { useAppStore } from '@/store/useAppStore';
 export default function App() {
     const [view, setView] = useState('landing');
     const [currentTab, setCurrentTab] = useState('home');
-    const { groups, addExpense, addGroup, fetchData } = useAppStore();
+    const { groups, addExpense, addGroup, fetchData, currentUser } = useAppStore();
     const [selectedGroup, setSelectedGroup] = useState(null);
     const [showAdd, setShowAdd] = useState(false);
     const [showCreateGroup, setShowCreateGroup] = useState(false);
@@ -50,25 +50,30 @@ export default function App() {
     const [editingExpense, setEditingExpense] = useState(null);
     const [showAuth, setShowAuth] = useState(false);
     const [session, setSession] = useState(null);
+    const [initializing, setInitializing] = useState(true);
     const [inviteGroupId, setInviteGroupId] = useState(null);
 
     // Initial session check & listener
     useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        const initSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
             setSession(session);
             if (session) {
                 setView('dashboard');
-                fetchData();
+                await fetchData();
             }
-        });
+            setInitializing(false);
+        };
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        initSession();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             setSession(session);
             if (session) {
                 setView('dashboard');
                 setShowAuth(false);
                 fetchData();
-            } else {
+            } else if (event === 'SIGNED_OUT') {
                 setView('landing');
             }
         });
@@ -134,6 +139,24 @@ export default function App() {
         setSelectedGroup(group);
         setView('group-detail');
     };
+
+    if (initializing) {
+        return (
+            <div className="h-screen bg-[#11111b] flex flex-col items-center justify-center space-y-4">
+                <motion.div
+                    animate={{ scale: [1, 1.1, 1], opacity: [0.5, 1, 0.5] }}
+                    transition={{ repeat: Infinity, duration: 2 }}
+                    className="text-6xl"
+                >
+                    🚀
+                </motion.div>
+                <div className="space-y-1 text-center">
+                    <h1 className="text-2xl font-black text-white tracking-tight">Lekha Jokha</h1>
+                    <p className="text-[10px] uppercase tracking-widest text-[#585b70] font-black">Restoring Session...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className={`h-screen bg-[#11111b] text-[#cdd6f4] flex flex-col relative ${view === 'landing' ? 'overflow-y-auto' : 'overflow-hidden'} selection:bg-[#abb4d9]/30 font-sans 
