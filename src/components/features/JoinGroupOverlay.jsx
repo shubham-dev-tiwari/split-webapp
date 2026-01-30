@@ -5,17 +5,21 @@ import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store/useAppStore';
 import SpotlightCard from '@/components/ui/SpotlightCard';
 
-const JoinGroupOverlay = ({ groupId, onClose }) => {
+const JoinGroupOverlay = ({ groupId, onClose, onJoinSuccess, onShowAuth }) => {
     const [group, setGroup] = useState(null);
     const [loading, setLoading] = useState(true);
     const [joining, setJoining] = useState(false);
-    const { joinGroup, currentUser, addNotification } = useAppStore();
+    const { joinGroup, currentUser, addNotification, groups } = useAppStore();
 
     useEffect(() => {
         const fetchGroup = async () => {
             const { data, error } = await supabase
                 .from('groups')
-                .select('*, group_members(count)')
+                .select(`
+                    *,
+                    owner:profiles(full_name),
+                    group_members(id, display_name, profiles(full_name))
+                `)
                 .eq('id', groupId)
                 .single();
 
@@ -33,12 +37,19 @@ const JoinGroupOverlay = ({ groupId, onClose }) => {
 
     const handleJoin = async () => {
         if (!currentUser) {
-            addNotification("Please sign in to join groups!", "info");
+            addNotification("Please sign in to join the group!", "info");
+            onShowAuth();
             return;
         }
         setJoining(true);
         await joinGroup(groupId);
         setJoining(false);
+
+        // Find the newly joined group (including balance) and navigate
+        const joinedGroup = useAppStore.getState().groups.find(g => g.id === groupId);
+        if (onJoinSuccess && joinedGroup) {
+            onJoinSuccess(joinedGroup);
+        }
         onClose();
     };
 
@@ -60,22 +71,30 @@ const JoinGroupOverlay = ({ groupId, onClose }) => {
 
                         <div className="space-y-2">
                             <h2 className="text-2xl font-black text-white leading-tight">Join "{group.name}"?</h2>
-                            <p className="text-[#a6adc8] text-sm font-medium">You've been invited to join this group ledger.</p>
+                            <p className="text-[#a6adc8] text-sm font-medium">
+                                Created by <span className="text-lavender font-bold">{group.owner?.full_name || 'a friend'}</span>
+                            </p>
                         </div>
 
-                        <div className="flex items-center justify-center gap-6 py-4">
-                            <div className="flex flex-col items-center gap-1">
-                                <Users size={20} className="text-mauve" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-[#585b70]">
-                                    {group.group_members?.[0]?.count || 0} Members
+                        <div className="flex flex-col items-center gap-4 py-4 px-6 bg-white/5 rounded-[24px] border border-white/5">
+                            <div className="flex items-center gap-2">
+                                <Users size={16} className="text-mauve" />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-[#9399b2]">
+                                    {group.group_members?.length || 0} Members
                                 </span>
                             </div>
-                            <div className="w-px h-8 bg-white/5" />
-                            <div className="flex flex-col items-center gap-1">
-                                <CheckCircle2 size={20} className="text-green-400" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-[#585b70]">
-                                    Official Invite
-                                </span>
+
+                            <div className="flex flex-wrap justify-center gap-2">
+                                {group.group_members?.slice(0, 5).map((m, i) => (
+                                    <div key={i} className="px-3 py-1 bg-[#313244] border border-white/5 rounded-full text-[10px] font-bold text-white shadow-sm">
+                                        {m.profiles?.full_name || m.display_name}
+                                    </div>
+                                ))}
+                                {group.group_members?.length > 5 && (
+                                    <div className="px-3 py-1 bg-white/5 border border-white/5 rounded-full text-[10px] font-bold text-[#585b70]">
+                                        +{group.group_members.length - 5} more
+                                    </div>
+                                )}
                             </div>
                         </div>
 

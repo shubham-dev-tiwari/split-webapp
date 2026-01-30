@@ -242,6 +242,8 @@ export default function App() {
                 <JoinGroupOverlay
                     groupId={inviteGroupId}
                     onClose={() => setInviteGroupId(null)}
+                    onJoinSuccess={navigateToGroup}
+                    onShowAuth={() => setShowAuth(true)}
                 />
             )}
 
